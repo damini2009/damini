@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EyeRa - Know your problem</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.15);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            min-height: 100vh;
+            margin: 0;
+            color: var(--light);
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 4px 8px rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.05),
+                transparent
+            );
+            z-index: -1;
+        }
+        
+        h2 {
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 3px;
+        }
+        
+        .upload-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px 0;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(0, 0, 0, 0.3);
+            transform: translateY(-3px);
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--accent);
+            background: rgba(236, 72, 153, 0.1);
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.2);
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            color: var(--primary);
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover .upload-icon {
+            transform: scale(1.1);
+            color: var(--accent);
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:hover::before {
+            opacity: 1;
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        
+        .btn:disabled::before {
+            display: none;
+        }
+        
+        .model-selection {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .model-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            min-width: 160px;
+            flex: 1;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .model-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+        
+        .model-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .model-card.selected {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .model-card.selected::before {
+            transform: scaleX(1);
+        }
+        
+        .model-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            color: var(--primary);
+            transition: all 0.3s ease;
+        }
+        
+        .model-card.selected .model-icon {
+            color: white;
+        }
+        
+        .model-card h3 {
+            color: white;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .model-card p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 16px;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .image-preview:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .result-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .result-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .confidence-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 12px;
+            margin: 15px 0;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #d1fae5;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fee2e2;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            margin: 20px 0;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1em;
+        }
+        
+        /* Floating animation for upload area */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .upload-area {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 25px;
+                border-radius: 16px;
+            }
+            
+            .model-selection {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .model-card {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .upload-area {
+                padding: 30px 20px;
+            }
+        }
+        
+        /* Glow effect for selected models */
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.8); }
+        }
+        
+        .model-card.selected {
+            animation: glow 2s infinite alternate;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>EyeRa: Custom Detection</h2>
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <p>Drag and drop your fundus image here or click to browse</p>
+                <input type="file" id="fileInput" class="file-input" accept="image/*">
+                <button class="btn" onclick="document.getElementById('fileInput').click()"><i class="fas fa-folder-open"></i> Choose File</button>
+            </div>
+            <div class="model-selection">
+                <div class="model-card selected" data-model="all">
+                    <div class="model-icon"><i class="fas fa-search-plus"></i></div>
+                    <h3>All Models</h3>
+                    <p>Complete Analysis</p>
+                </div>
+                <div class="model-card" data-model="dr">
+                    <div class="model-icon"><i class="fas fa-eye"></i></div>
+                    <h3>Diabetic Retinopathy</h3>
+                    <p>DR Detection</p>
+                </div>
+                <div class="model-card" data-model="glaucoma">
+                    <div class="model-icon"><i class="fas fa-search"></i></div>
+                    <h3>Glaucoma</h3>
+                    <p>Glaucoma Detection</p>
+                </div>
+                <div class="model-card" data-model="retina">
+                    <div class="model-icon"><i class="fas fa-eye"></i></div>
+                    <h3>Retinal Disease</h3>
+                    <p>Retinal Analysis</p>
+                </div>
+            </div>
+            <button class="btn" id="analyzeBtn" disabled><i class="fas fa-microscope"></i> Analyze Image</button>
+        </div>
+        <div id="imagePreview"></div>
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Analyzing image with AI models...</p>
+        </div>
+        <div id="results"></div>
+        <a href="/" class="btn"><i class="fas fa-home"></i> Home</a>
+    </div>
+
+    <script>
+        let selectedModel = 'all';
+        let selectedFile = null;
+        
+        document.querySelectorAll('.model-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedModel = card.dataset.model;
+                
+                // Add ripple effect
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                card.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const imagePreview = document.getElementById('imagePreview');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        
+        uploadArea.addEventListener('dragover', (e) => { 
+            e.preventDefault(); 
+            uploadArea.classList.add('dragover'); 
+        });
+        
+        uploadArea.addEventListener('dragleave', () => { 
+            uploadArea.classList.remove('dragover'); 
+        });
+        
+        uploadArea.addEventListener('drop', (e) => { 
+            e.preventDefault(); 
+            uploadArea.classList.remove('dragover'); 
+            const files = e.dataTransfer.files; 
+            if (files.length > 0) { 
+                handleFile(files[0]); 
+            } 
+        });
+        
+        uploadArea.addEventListener('click', () => { 
+            fileInput.click(); 
+        });
+        
+        fileInput.addEventListener('change', (e) => { 
+            if (e.target.files.length > 0) { 
+                handleFile(e.target.files[0]); 
+            } 
+        });
+        
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) { 
+                alert('Please select an image file'); 
+                return; 
+            }
+            
+            selectedFile = file;
+            analyzeBtn.disabled = false;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                imagePreview.innerHTML = `<img src="${e.target.result}" class="image-preview" alt="Preview">`; 
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            loading.style.display = 'block';
+            results.innerHTML = '';
+            
+            // Add pulse animation to analyze button
+            analyzeBtn.style.animation = 'pulse 0.5s ease';
+            setTimeout(() => {
+                analyzeBtn.style.animation = '';
+            }, 500);
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            let endpoint = '';
+            if (selectedModel === 'all') endpoint = '/predict/all';
+            else if (selectedModel === 'dr') endpoint = '/predict/dr';
+            else if (selectedModel === 'glaucoma') endpoint = '/predict/glaucoma';
+            else if (selectedModel === 'retina') endpoint = '/predict/retina';
+            
+            try {
+                const response = await fetch(endpoint, { 
+                    method: 'POST', 
+                    body: formData 
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) { 
+                    displayResults(data); 
+                } else { 
+                    displayError(data.error); 
+                }
+            } catch (error) { 
+                displayError('Network error: ' + error.message); 
+            } finally { 
+                loading.style.display = 'none'; 
+            }
+        });
+        
+        function displayResults(data) {
+            let html = '<div class="success"><i class="fas fa-check-circle"></i> Analysis completed successfully!</div>';
+            
+            if (data.results) {
+                Object.entries(data.results).forEach(([model, result]) => { 
+                    html += createResultCard(model, result); 
+                });
+            } else { 
+                html += createResultCard(data.model, data.result); 
+            }
+            
+            results.innerHTML = html;
+            
+            // Animate confidence bars
+            setTimeout(() => {
+                document.querySelectorAll('.confidence-fill').forEach(bar => {
+                    const width = bar.style.width;
+                    bar.style.width = '0';
+                    setTimeout(() => {
+                        bar.style.width = width;
+                    }, 100);
+                });
+            }, 100);
+        }
+        
+        function createResultCard(model, result) {
+            const modelNames = { 
+                'dr': 'Diabetic Retinopathy', 
+                'glaucoma': 'Glaucoma', 
+                'retina': 'Retinal Disease', 
+                'Diabetic Retinopathy (DR)': 'Diabetic Retinopathy', 
+                'Retinal Vascular Occlusion (RVO)': 'Retinal Disease' 
+            };
+            
+            const confidencePercent = Math.round(result.confidence * 100);
+            let confidenceColor;
+            
+            if (confidencePercent > 80) {
+                confidenceColor = '#10b981'; // Success green
+            } else if (confidencePercent > 60) {
+                confidenceColor = '#f59e0b'; // Warning orange
+            } else {
+                confidenceColor = '#ef4444'; // Danger red
+            }
+            
+            return `
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="result-title">${modelNames[model] || model}</div>
+                        <div style="color: ${confidenceColor}; font-weight: bold;">
+                            ${confidencePercent}% Confidence
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Prediction:</strong> ${result.prediction}
+                    </div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" style="width: ${confidencePercent}%; background: ${confidenceColor};"></div>
+                    </div>
+                    ${result.probabilities ? `
+                        <div style="margin-top: 15px;">
+                            <strong>Probabilities:</strong>
+                            <ul style="margin-top: 5px; padding-left: 20px;">
+                                ${result.probabilities.map((prob, idx) => `<li>${(prob * 100).toFixed(1)}%</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        function displayError(message) { 
+            results.innerHTML = `<div class="error"><i class="fas fa-exclamation-circle"></i> Error: ${message}</div>`; 
+        }
+        
+        // Initialize with 'all' model selected
+        document.querySelector('[data-model="all"]').classList.add('selected');
+        
+        // Add ripple effect to buttons
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple-effect');
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                
+                this.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+    </script>
+</body>
+</html>
